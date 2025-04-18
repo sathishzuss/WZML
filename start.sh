@@ -1,1 +1,3 @@
-python3 update.py && python3 -m bot
+apt-get update && apt-get install -y git wget python3 python3-pip aria2 ffmpeg mediainfo unzip p7zip-full qbittorrent-nox
+pip3 install -U -r requirements.txt
+python3 -m bot

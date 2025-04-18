@@ -14,7 +14,6 @@ from lxml.etree import HTML
 from requests import Session, session as req_session, post
 from urllib.parse import parse_qs, quote, unquote, urlparse, urljoin
 from cloudscraper import create_scraper
-from lk21 import Bypass
 from http.cookiejar import MozillaCookieJar
 
 from bot import LOGGER, config_dict
@@ -897,7 +896,7 @@ def github(url):
 
 def hxfile(url):
     try:
-        return Bypass().bypass_filesIm(url)
+        return True
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
@@ -927,7 +926,7 @@ def anonfilesBased(url):
 
 def fembed(link):
     try:
-        dl_url = Bypass().bypass_fembed(link)
+        dl_url = "idhiudguid"
         count = len(dl_url)
         lst_link = [dl_url[i] for i in dl_url]
         return lst_link[count - 1]
@@ -940,7 +939,7 @@ def sbembed(link):
     Based on https://github.com/zevtyardt/lk21
     """
     try:
-        dl_url = Bypass().bypass_sbembed(link)
+        dl_url = "4w"
         count = len(dl_url)
         lst_link = [dl_url[i] for i in dl_url]
         return lst_link[count - 1]
@@ -1006,7 +1005,7 @@ def pixeldrain(url):
 
 def antfiles(url):
     try:
-        return Bypass().bypass_antfiles(url)
+        return "Bypass().bypass_antfiles(url)"
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
