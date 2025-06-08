@@ -763,7 +763,7 @@ async def tamilmvMonitor():
                         urd = linkdb.find_one({"link":mag})
                         if urd is None:
                             name, magnet = extract_name(mag)
-                            msg = await bot.send_message(chat_id=int(-1002084260558),text=f"/qbleech {mag} -n {name} -ud -1002511974693")
+                            msg = await bot.send_message(chat_id=int(-1002084260558),text=f"/qbleech {magnet} -n {name} -ud -1002511974693")
                             await qb_leech(bot,msg)
                             linkdb.insert_one({"link":mag})
                             await sleep(60)
