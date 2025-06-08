@@ -768,7 +768,10 @@ async def tamilmvMonitor():
                             linkdb.insert_one({"link":mag})
                             await sleep(60)
                         else:
-                            await sleep(0.3)
+                            try:
+                                await sleep(0.3)
+                            except asyncio.CancelledError:
+                                print("Task was cancelled, performing cleanup if needed...")
                 except Exception as e:
                     print(e)
 
