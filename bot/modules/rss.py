@@ -13,7 +13,7 @@ from io import BytesIO
 import pymongo, requests
 from bs4 import BeautifulSoup
 import urllib.parse
-import os, re
+import os, re, asyncio
 
 from bot import scheduler, rss_dict, LOGGER, DATABASE_URL, config_dict, bot
 from bot.helper.telegram_helper.message_utils import (
@@ -766,10 +766,10 @@ async def tamilmvMonitor():
                             msg = await bot.send_message(chat_id=int(-1002084260558),text=f"/qbleech {magnet} -n {name} -ud -1002511974693")
                             await qb_leech(bot,msg)
                             linkdb.insert_one({"link":mag})
-                            await sleep(60)
+                            await asyncio.sleep(60)
                         else:
                             try:
-                                await sleep(1)
+                                await asyncio.sleep(1)
                             except asyncio.CancelledError:
                                 print("Task was cancelled, performing cleanup if needed...")
                 except Exception as e:
