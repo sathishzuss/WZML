@@ -769,7 +769,7 @@ async def tamilmvMonitor():
                             await sleep(60)
                         else:
                             try:
-                                await sleep(0.3)
+                                await sleep(1)
                             except asyncio.CancelledError:
                                 print("Task was cancelled, performing cleanup if needed...")
                 except Exception as e:
