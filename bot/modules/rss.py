@@ -10,6 +10,10 @@ from aiohttp import ClientSession
 from apscheduler.triggers.interval import IntervalTrigger
 from re import split as re_split
 from io import BytesIO
+import pymongo, requests
+from bs4 import BeautifulSoup
+import urllib.parse
+import os, re
 
 from bot import scheduler, rss_dict, LOGGER, DATABASE_URL, config_dict, bot
 from bot.helper.telegram_helper.message_utils import (
@@ -17,6 +21,7 @@ from bot.helper.telegram_helper.message_utils import (
     editMessage,
     sendRss,
     sendFile,
+    sendCustomMsg,
 )
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -25,10 +30,27 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import new_thread
 from bot.helper.ext_utils.exceptions import RssShutdownException
 from bot.helper.ext_utils.help_messages import RSS_HELP_MESSAGE
+from bot.modules.mirror_leech import qb_leech
 
 rss_dict_lock = Lock()
 handler_dict = {}
 
+MONGO_URL = "mongodb+srv://stark:stark@stark.qitiaxy.mongodb.net"
+mongo = pymongo.MongoClient(MONGO_URL)
+db = mongo["TAMILMV"]
+linkdb = db["LINKSMAIN"]
+mainurldb = db["MAINURL"]
+
+def extract_name(magnet):
+    dn_match = re.search(r'dn=([^&]+)', magnet)
+    name = None
+    if dn_match:
+        decoded_name = urllib.parse.unquote(dn_match.group(1))
+        clean_name_match = re.search(r'www\.[^ ]+ - (.+)', decoded_name)
+        name = clean_name_match.group(1) if clean_name_match else decoded_name
+    xt_match = re.search(r'(magnet:\?xt=urn:btih:[a-fA-F0-9]+)', magnet)
+    base_magnet = xt_match.group(1) if xt_match else None
+    return name, base_magnet
 
 async def rssMenu(event):
     user_id = event.from_user.id
@@ -711,6 +733,44 @@ async def rssMonitor():
     if all_paused:
         scheduler.pause()
 
+async def tamilmvMonitor():
+    domain = mainurldb.find_one({"name":"1tamilmv"})
+    if domain:
+        response = requests.get(domain["url"], allow_redirects=True)
+        final_url = response.url
+        mainurldb.update_one({"name": "1tamilmv"},{"$set": {"url": final_url}})
+    else:
+        response = requests.get("https://www.1tamilmv.boo/", allow_redirects=True)
+        final_url = response.url
+        mainurldb.insert_one({"name": "1tamilmv","url": final_url})
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    links = soup.find_all("a")
+    x=0
+    for link in links:
+        if link.get("href").startswith(f"{final_url}index.php?/forums/topic") and x<6:
+            link = link.get("href")
+            x=x+1
+            response = requests.get(link)
+            soup = BeautifulSoup(response.text, "html.parser")
+            links = soup.find_all("a")
+            y=0
+            for link in links:
+                try:
+                    if link.get("href").startswith("magnet:?xt") and y<15:
+                        y=y+1
+                        mag = link.get("href")
+                        urd = linkdb.find_one({"link":mag})
+                        if urd is None:
+                            name, magnet = extract_name(mag)
+                            msg = await bot.send_message(chat_id=int(-1002084260558),text=f"/qbleech {mag} -n {name} -ud -1002511974693")
+                            await qb_leech(bot,msg)
+                            linkdb.insert_one({"link":mag})
+                            await sleep(60)
+                        else:
+                            await sleep(0.3)
+                except Exception as e:
+                    print(e)
 
 def addJob(delay):
     scheduler.add_job(
@@ -718,6 +778,16 @@ def addJob(delay):
         trigger=IntervalTrigger(seconds=delay),
         id="0",
         name="RSS",
+        misfire_grace_time=15,
+        max_instances=1,
+        next_run_time=datetime.now() + timedelta(seconds=20),
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        tamilmvMonitor,
+        trigger=IntervalTrigger(seconds=delay),
+        id="1",
+        name="TAMILMV",
         misfire_grace_time=15,
         max_instances=1,
         next_run_time=datetime.now() + timedelta(seconds=20),
